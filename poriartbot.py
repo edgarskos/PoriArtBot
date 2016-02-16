@@ -13,12 +13,10 @@ The functionality in a bit more detail:
 2. The spreadsheet is read line by line utilizing the csv.reader
 2.1. If the first column of the spreadsheet row contains a link to an existing Wikidata item then
 2.1.1 Check if the second and third column of the spreadheet row contain coordinates and the Wikidata item does not have coordinate location. Insert coordinates for the item accordingly.
-2.1.2 Check if the item has claims instance of public art and instance of sculpture. Insert the claims accordingly.
-2.1.3 Check if the country claim exists and if not then insert the claim.
-2.1.4. Check if the item has publication date claim and try to parse the publication date from the sixth column of the spreadsheet row. Insert publication date accordingly.
-2.1.5. Check if the eight column of the spreadsheet row contains Wikipedia link and if the item has the link to Finnish Wikipedia. Insert link accordingly.
-2.1.6. Check if the fourth column of the spreadsheet row contains label and if item has Finish label. Insert Finnish label accordingly.
-2.1.7. Check if the item has creator claim and if the fifth column of the spredsheet row contains creator name. If the item does not have a creator claim and the column has a creator name then try to find Wikidata item for the creator. Insert the creator claim accordingly.
+2.1.2 Check if the country claim exists and if not then insert the claim.
+2.1.3. Check if the eight column of the spreadsheet row contains Wikipedia link and if the item has the link to Finnish Wikipedia. Insert link accordingly.
+2.1.4. Check if the fourth column of the spreadsheet row contains label and if item has Finish label. Insert Finnish label accordingly.
+2.1.5. Check if the item has creator claim and if the fifth column of the spredsheet row contains creator name. If the item does not have a creator claim and the column has a creator name then try to find Wikidata item for the creator. Insert the creator claim accordingly.
 """
 
 import pywikibot
