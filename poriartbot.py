@@ -1,9 +1,21 @@
+#!/usr/bin/python
 
-# Overall functionality:
-# The bot reads spreadsheet data regarding public art at the city of Pori, Finland and updates Wikidata items based on the spreadsheet data. The spreadsheet has been created and is upkept by the Pori Art Museum (http://www.poriartmuseum.fi/). The 
-# 1. check if the first col contains url and if it contains check if wikidata-item exists
-# 2.1 if it does not have coords and the spreadsheet second and third col contain coords then insert coords
-# 2.2 if item exists check the existence of the rest item properties and spreadsheet cols and insert if possible
+"""
+Overall functionality:
+The bot reads spreadsheet data regarding public art at the city of Pori, Finland and updates Wikidata items based on the spreadsheet data and also based on some general facts such as all the pieces of art reside in Finland. The spreadsheet has been created and is upkept by the Pori Art Museum (http://www.poriartmuseum.fi/).
+
+The functionality in a bit more detail:
+1. The spreadheet is read by using the requests library. 
+2. The spreadsheet is read line by line utilizing the csv.reader
+2.1. If the first column of the spreadsheet row contains a link to an existing Wikidata item then
+2.2. Check if the second and third column of the spreadheet row contain coordinates and the Wikidata item does not have coordinate location. Insert coordinates for the item accordingly.
+2.3. Check if the item has claims instance of public art and instance of sculpture. Insert the claims accordingly.
+2.4. Check if the country claim exists and if not then insert the claim.
+2.5. Check if the item has publication date claim and try to parse the publication date from the sixth column of the spreadsheet row. Insert publication date accordingly.
+2.6. Check if the eight column of the spreadsheet row contains Wikipedia link and if the item has the link to Finnish Wikipedia. Insert link accordingly.
+2.7. Check if the fourth column of the spreadsheet row contains label and if item has Finish label. Insert Finnish label accordingly.
+2.8. Check if the item has creator claim and if the fifth column of the spredsheet row contains creator name. If the item does not have a creator claim and the column has a creator name then try to find Wikidata item for the creator. Insert the creator claim accordingly.
+"""
 
 import pywikibot
 import io
@@ -14,12 +26,14 @@ import time
 import re
 from pywikibot.pagegenerators import WikibaseSearchItemPageGenerator
 
+
 def is_float(s):
     try:
         float(s)
         return True
     except ValueError:
         return False
+
 
 def addItemClaim(item, property_id, item_id):
     claim = pywikibot.Claim(repo, property_id)
@@ -28,14 +42,14 @@ def addItemClaim(item, property_id, item_id):
     item.addClaim(claim)
 
 
-site = pywikibot.Site("wikidata", "wikidata")
-#site = pywikibot.Site("test", "wikidata")
-repo = site.data_repository()
-
 # Real spreadsheet for the Pori public art
 sheet_url = "https://docs.google.com/spreadsheets/d/1XYeO5BNS71y2XjLfCHwDExDewKInDOCbqFW6-1gVIBU/pub?output=csv"
 #Test sheet
 #sheet_url = "https://docs.google.com/spreadsheets/d/1Qq-FF4yO-UopXifnhG8yAyOmmKTs9Bn31pEDJ0Rr-3k/pub?output=csv"
+
+site = pywikibot.Site("wikidata", "wikidata") # The real Wikidata site
+#site = pywikibot.Site("test", "wikidata") # Site for testing code
+repo = site.data_repository()
 
 coord_location_property = u'P625' # www.wikidata.org
 #coord_location_property = u'P125' # test.wikidata.org
@@ -54,15 +68,15 @@ sculpture_item = u'Q860861'
 Finland_item = u'Q33'
 #Finland_item = u'Q1672'
 
-r = requests.get(sheet_url)
+r = requests.get(sheet_url) # Get the spreadsheet
 r.encoding = 'utf-8'
 #pywikibot.output(r.encoding)
 #pywikibot.output((r.text)
-reader = csv.reader(io.StringIO(r.text))
+reader = csv.reader(io.StringIO(r.text)) # The csv.reader expects input stream
 
-next(reader, None) # skip the header row
+next(reader, None) # Skip the header row
 
-for row in reader:
+for row in reader: # Go through spreadsheet rows
     #pywikibot.output(row)
         
     parsed_url = parse.urlparse(row[0])
@@ -114,13 +128,13 @@ for row in reader:
                     pywikibot.output(u'adding instance of sculpture claim')
                     addItemClaim(item, instance_of_property, sculpture_item)
 
-            if not country_property in item.claims: # Add country
+            if not country_property in item.claims: # Add country?
                 pywikibot.output(u'adding country claim')
                 addItemClaim(item, country_property, Finland_item)
                 
-            if not publication_date_property in item.claims: # Add publication date
+            if not publication_date_property in item.claims: # Add publication date?
                 claim = pywikibot.Claim(repo, publication_date_property)
-                try:
+                try: # Try to parse date in format 11/23/1990
                     pub_time = time.strptime(row[5], "%m/%d/%Y")
                     pywikibot.output(u'adding publication date claim')
                     pywikibot.output("" + str(pub_time.tm_mday) + "." + str(pub_time.tm_mon) + "." + str(pub_time.tm_year))
@@ -128,7 +142,7 @@ for row in reader:
                     claim.setTarget(target)
                     item.addClaim(claim)
                 except ValueError:
-                    try:
+                    try: # Try to parse date in format 23.11.1990
                         pub_time = time.strptime(row[5], "%d.%m.%Y")
                         pywikibot.output(u'adding publication date claim')
                         pywikibot.output("" + str(pub_time.tm_mday) + "." + str(pub_time.tm_mon) + "." + str(pub_time.tm_year))
@@ -165,7 +179,7 @@ for row in reader:
                 gen = WikibaseSearchItemPageGenerator(row[4], language="fi", site=site)
                 if gen:
                     items = list(enumerate(gen))
-                    if len(items) > 0:
+                    if len(items) == 1:
                         pywikibot.output(u'adding creator claim')
                         item_id = items[0][1].title()
                         addItemClaim(item, creator_property, item_id)
